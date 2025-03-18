@@ -1,0 +1,8 @@
+.enhanced-theater-mode {
+    background: black;
+    overflow: hidden;
+}
+
+button[title="Toggle Enhanced Theater Mode (Drag to reposition)"] {
+    z-index: 1001;
+}

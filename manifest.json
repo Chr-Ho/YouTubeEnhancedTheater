@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Enhanced Theater",
+  "version": "1.0",
+  "description": "Maximizes YouTube video within the browser window while preserving aspect ratio.",
+  "permissions": ["activeTab"],
+  "action": {
+    "default_icon": {
+      "48": "icon48.png"
+    }
+  },
+  "commands": {
+    "toggle-theater-mode": {
+      "suggested_key": {
+        "default": "Alt+T"
+      },
+      "description": "Toggle Enhanced Theater Mode"
+    }
+  },
+  "icons": {
+    "48": "icon48.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/watch?v=*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
