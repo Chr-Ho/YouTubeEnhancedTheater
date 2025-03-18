@@ -1,10 +1,5 @@
 let isEnhancedMode = false;
-const videoPlayer = document.querySelector('.html5-video-player');
 let video = document.querySelector('video');
-
-// Store button position as percentages (initially 10px from left, 60px from bottom)
-let posLeftPercent = 10 / window.innerWidth * 100; // ~1-2% depending on window width
-let posBottomPercent = 60 / window.innerHeight * 100; // ~5-10% depending on window height
 
 function waitForVideoMetadata(callback) {
     if (video && video.videoWidth && video.videoHeight) {
@@ -21,176 +16,101 @@ function waitForVideoMetadata(callback) {
 
 function toggleEnhancedMode() {
     isEnhancedMode = !isEnhancedMode;
+    
+    // Get all relevant elements
+    const ytdWatch = document.querySelector('ytd-watch-flexy');
+    const playerContainer = document.querySelector('#player-container');
+    const moviePlayer = document.querySelector('#movie_player');
+    const videoContainer = document.querySelector('.html5-video-container');
+    const video = document.querySelector('video');
+
     if (isEnhancedMode) {
-        waitForVideoMetadata(updateVideoSize);
+        // Force theater mode first
+        if (ytdWatch && !ytdWatch.hasAttribute('theater')) {
+            document.querySelector('.ytp-size-button')?.click();
+        }
+
         document.body.classList.add('enhanced-theater-mode');
+        
+        // Hide elements
+        document.querySelector('#masthead-container')?.style.setProperty('display', 'none');
         document.querySelector('#secondary')?.style.setProperty('display', 'none');
         document.querySelector('#comments')?.style.setProperty('display', 'none');
+        document.querySelector('#below')?.style.setProperty('display', 'none');
+
+        // Apply fullscreen styles
+        if (moviePlayer) {
+            moviePlayer.style.cssText = `
+                position: fixed !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                max-width: none !important;
+                max-height: none !important;
+                z-index: 2147483647 !important;
+            `;
+        }
+
+        if (videoContainer) {
+            videoContainer.style.cssText = `
+                width: 100% !important;
+                height: 100% !important;
+                transform: none !important;
+            `;
+        }
+
+        if (video) {
+            video.style.cssText = `
+                width: 100% !important;
+                height: 100% !important;
+                max-width: 100vw !important;
+                max-height: 100vh !important;
+                object-fit: contain !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+            `;
+        }
     } else {
+        // Reset everything
         document.body.classList.remove('enhanced-theater-mode');
-        videoPlayer.style.cssText = '';
-        document.querySelector('#secondary')?.style.removeProperty('display');
-        document.querySelector('#comments')?.style.removeProperty('display');
+        
+        [moviePlayer, videoContainer, video].forEach(element => {
+            if (element) {
+                element.style.cssText = '';
+            }
+        });
+
+        // Show elements
+        ['#masthead-container', '#secondary', '#comments', '#below'].forEach(selector => {
+            document.querySelector(selector)?.style.removeProperty('display');
+        });
+
+        // Force a player resize by toggling theater mode
+        if (ytdWatch) {
+            const isTheater = ytdWatch.hasAttribute('theater');
+            document.querySelector('.ytp-size-button')?.click();
+            if (isTheater) {
+                setTimeout(() => document.querySelector('.ytp-size-button')?.click(), 50);
+            }
+        }
     }
 }
 
-function updateVideoSize() {
-    if (!isEnhancedMode || !video || !video.videoWidth || !video.videoHeight) {
-        return;
-    }
-
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    const videoAspectRatio = video.videoWidth / video.videoHeight;
-
-    let newWidth = windowWidth;
-    let newHeight = newWidth / videoAspectRatio;
-
-    if (newHeight > windowHeight) {
-        newHeight = windowHeight;
-        newWidth = newHeight * videoAspectRatio;
-    }
-
-    videoPlayer.style.cssText = `
-        width: ${newWidth}px !important;
-        height: ${newHeight}px !important;
-        max-width: none !important;
-        max-height: none !important;
-        position: fixed !important;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 1000;
-        background: black;
-    `;
-}
-
-function updateButtonPosition() {
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    const buttonWidth = toggleButton.offsetWidth;
-    const buttonHeight = toggleButton.offsetHeight;
-
-    let newLeft = (posLeftPercent / 100) * windowWidth;
-    let newBottom = (posBottomPercent / 100) * windowHeight;
-
-    // Ensure button stays within bounds
-    const maxLeft = windowWidth - buttonWidth;
-    const maxBottom = windowHeight - buttonHeight;
-    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-    newBottom = Math.max(0, Math.min(newBottom, maxBottom));
-
-    toggleButton.style.left = `${newLeft}px`;
-    toggleButton.style.bottom = `${newBottom}px`;
-    toggleButton.style.top = 'auto';
-    toggleButton.style.right = 'auto';
-}
-
-const toggleButton = document.createElement('button');
-toggleButton.title = 'Click to toggle theater mode (Hold to drag)';
-toggleButton.style.cssText = `
-    position: fixed;
-    z-index: 9999999;
-    width: 48px;
-    height: 48px;
-    padding: 0;
-    border: none;
-    border-radius: 8px;
-    background: url(${chrome.runtime.getURL('icon48.png')}) center/contain no-repeat;
-    background-color: rgba(255, 255, 255, 0.9);
-    cursor: move;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-`;
-document.body.appendChild(toggleButton);
-
-// Set initial position
-updateButtonPosition();
-
-// Replace hover effects
-toggleButton.onmouseover = () => {
-    toggleButton.style.transform = 'scale(1.1)';
-    toggleButton.style.transition = 'transform 0.2s ease';
-};
-toggleButton.onmouseout = () => {
-    toggleButton.style.transform = 'scale(1)';
-    toggleButton.style.transition = 'transform 0.2s ease';
-};
-
-// Dragging functionality
-let isDragging = false;
-let mouseDownTimer = null;
-let currentX;
-let currentY;
-
-toggleButton.onmousedown = (e) => {
-    // Clear any existing timers
-    if (mouseDownTimer) {
-        clearTimeout(mouseDownTimer);
-    }
-
-    // Start a timer to detect hold
-    mouseDownTimer = setTimeout(() => {
-        isDragging = true;
-        currentX = e.clientX - parseInt(toggleButton.style.left || '0');
-        currentY = e.clientY - (window.innerHeight - parseInt(toggleButton.style.bottom || '0') - toggleButton.offsetHeight);
-        toggleButton.style.cursor = 'grabbing';
-    }, 200); // 200ms hold to start dragging
-};
-
-document.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    const buttonWidth = toggleButton.offsetWidth;
-    const buttonHeight = toggleButton.offsetHeight;
-
-    let newLeft = e.clientX - currentX;
-    let newTop = e.clientY - currentY;
-    let newBottom = windowHeight - newTop - buttonHeight;
-
-    // Constrain within window
-    const maxLeft = windowWidth - buttonWidth;
-    const maxBottom = windowHeight - buttonHeight;
-    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-    newBottom = Math.max(0, Math.min(newBottom, maxBottom));
-
-    toggleButton.style.left = `${newLeft}px`;
-    toggleButton.style.bottom = `${newBottom}px`;
-    toggleButton.style.top = 'auto';
-    toggleButton.style.right = 'auto';
-
-    // Update percentages
-    posLeftPercent = (newLeft / windowWidth) * 100;
-    posBottomPercent = (newBottom / windowHeight) * 100;
-});
-
-document.addEventListener('mouseup', () => {
-    // Clear the mousedown timer
-    if (mouseDownTimer) {
-        clearTimeout(mouseDownTimer);
-        mouseDownTimer = null;
-    }
-
-    if (isDragging) {
-        isDragging = false;
-        toggleButton.style.cursor = 'move';
-    }
-});
-
-// Toggle mode on click
-toggleButton.onclick = (e) => {
-    if (!isDragging) {
-        toggleEnhancedMode();
-    }
-};
-
-// Update on window resize
+// Debounced resize handler
+let resizeTimeout;
 window.addEventListener('resize', () => {
-    if (isEnhancedMode) {
-        updateVideoSize();
-    }
-    updateButtonPosition(); // Maintain relative position
+    if (!isEnhancedMode) return;
+    
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        const video = document.querySelector('video');
+        if (video) {
+            video.style.maxWidth = '100vw';
+            video.style.maxHeight = '100vh';
+        }
+    }, 100);
 });
 
 // Listen for extension icon clicks
@@ -200,6 +120,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
+// Initial setup
 waitForVideoMetadata(() => {
-    if (isEnhancedMode) updateVideoSize();
+    if (isEnhancedMode) toggleEnhancedMode();
 });

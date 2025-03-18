@@ -1,8 +1,26 @@
 .enhanced-theater-mode {
-    background: black;
-    overflow: hidden;
+    background: black !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
-button[title="Toggle Enhanced Theater Mode (Drag to reposition)"] {
-    z-index: 1001;
+.enhanced-theater-mode #content {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.enhanced-theater-mode .html5-video-container {
+    transform: none !important;
+}
+
+.enhanced-theater-mode .html5-main-video {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    object-fit: contain !important;
 }
