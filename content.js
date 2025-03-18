@@ -1,5 +1,23 @@
 let isEnhancedMode = false;
+let isInitialized = false;
+const videoPlayer = document.querySelector('.html5-video-player');
 let video = document.querySelector('video');
+
+function initializeExtension() {
+    if (isInitialized) return;
+    
+    // Load saved state
+    chrome.storage.sync.get(['isEnabled'], function(data) {
+        isEnhancedMode = !!data.isEnabled;
+        if (isEnhancedMode) {
+            waitForVideoMetadata(() => {
+                toggleEnhancedMode();
+            });
+        }
+    });
+    
+    isInitialized = true;
+}
 
 function waitForVideoMetadata(callback) {
     if (video && video.videoWidth && video.videoHeight) {
@@ -113,14 +131,39 @@ window.addEventListener('resize', () => {
     }, 100);
 });
 
-// Listen for extension icon clicks
+// Enhanced message listener
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'toggle') {
-        toggleEnhancedMode();
+    try {
+        if (request.action === 'ping') {
+            // Respond to ping to confirm content script is ready
+            sendResponse({ success: true });
+            return true;
+        }
+        
+        if (request.action === 'toggle') {
+            if (!isInitialized) {
+                initializeExtension();
+            }
+            
+            // If enabled state is provided, sync with it
+            if (typeof request.enabled !== 'undefined') {
+                isEnhancedMode = !request.enabled;
+            }
+            
+            toggleEnhancedMode();
+            sendResponse({ success: true, state: isEnhancedMode });
+            return true;
+        }
+    } catch (error) {
+        console.error('Error in message listener:', error);
+        sendResponse({ success: false, error: error.message });
     }
+    return true;
 });
 
-// Initial setup
-waitForVideoMetadata(() => {
-    if (isEnhancedMode) toggleEnhancedMode();
-});
+// Initialize on load
+document.addEventListener('DOMContentLoaded', initializeExtension);
+// Backup initialization for cases where DOMContentLoaded has already fired
+if (document.readyState === 'complete') {
+    initializeExtension();
+}

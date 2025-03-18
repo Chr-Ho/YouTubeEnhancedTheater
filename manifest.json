@@ -3,11 +3,15 @@
   "name": "YouTube Enhanced Theater",
   "version": "1.0",
   "description": "Maximizes YouTube video within the browser window while preserving aspect ratio.",
-  "permissions": ["activeTab"],
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
   "action": {
     "default_icon": {
       "48": "icon48.png"
-    }
+    },
+    "default_popup": "popup.html"
   },
   "commands": {
     "toggle-theater-mode": {
