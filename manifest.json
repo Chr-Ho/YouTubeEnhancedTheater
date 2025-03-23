@@ -27,9 +27,13 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.youtube.com/watch?v=*"],
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://youtube.com/*"
+      ],
       "js": ["content.js"],
-      "css": ["styles.css"]
+      "css": ["styles.css"],
+      "run_at": "document_idle"
     }
   ],
   "background": {
