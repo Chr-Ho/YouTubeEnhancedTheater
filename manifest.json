@@ -5,7 +5,8 @@
   "description": "Maximizes YouTube video within the browser window while preserving aspect ratio.",
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "webNavigation"
   ],
   "action": {
     "default_icon": {

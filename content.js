@@ -6,6 +6,9 @@ let video = document.querySelector('video');
 function initializeExtension() {
     if (isInitialized) return;
     
+    // Signal content script readiness
+    chrome.runtime.sendMessage({ action: 'contentScriptReady' });
+    
     // Load saved state
     chrome.storage.sync.get(['isEnabled'], function(data) {
         isEnhancedMode = !!data.isEnabled;
